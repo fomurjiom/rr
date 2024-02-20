@@ -1,0 +1,60 @@
+# Устанавливаем нужные пакеты
+apt install gnupg reprepro apache2
+
+#Генерируем ключ gpg
+gpg --gen-key
+#Вводим имя и почту, затем два раза пароль для ключа
+
+#Создаем папку repo и в ней создаем папку conf для репозитрия
+mkdir -p /srv/repo/conf
+
+#Создаем в /srv/repo/conf файл distributions со следующим содержимым
+Codename: reaskills
+Components: reaskills-apps
+Architectures: amd64
+SignWith: yes
+
+#Выполняем export репозитория
+reprepro --ask-passphrase -b /srv/repo export
+#Запросит пароль от ключа который задавали ранее
+
+#Добавляем созданный ранее пакет в репозиторий
+reprepro --ask-passphrase -b /srv/repo includedeb reaskills /root/hello-reaskills_1.0-1_amd64.deb
+#Скорее всего тут --ask-passphrase можно не прописывать
+
+#Настраиваем apache2. Редактируем /etc/apache2/apache2.conf и вырубаем нах AstraMode
+AstraMode off
+
+#Врубаем ssl
+a2enmod ssl
+
+#Редактируем /etc/apache2/sites-available/default-ssl.conf
+#Тут все просто дописываем в DocumentRoot путь /var/www/html/repo
+#И указываем пути до сертов которые нужно сгенерить для адреса repo.rea2024.ru (незабываем сделать запись в DNS)
+DocumentRoot /var/www/html/repo
+SSLCertificateFile	/etc/ssl/certs/ssl-cert-snakeoil.pem
+SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+
+#Подрубаем конфиг
+a2ensite default-ssl.conf
+
+#Создаем символьную ссылку на /srv/repo в /var/www/html
+ln -s /srv/repo /var/www/html
+
+#Перечитываем конфиги apache2
+systemctl reload apache2.service
+
+#Теперь нужно экспортировать gpg ключи и импортировать его на все АРМ
+gpg --armor --output /var/www/html/repo/gpg.key --export mail@rea2023.ru (почта которую указывали при генерации gpg ключа, сразу ложим его что бы можно было скачать)
+
+#Теперь идем на все АРМ и импортируем его
+wget -qO - https://repo.rea2024.ru/gpg.key | apt-key add
+
+# И проверяем добавил в /etc/apt/source.list строку
+deb https://repo.rea2024.ru reaskills reaskills-apps
+
+#Обновляем список пакетов
+apt update (ошибок и предупреждений быть не должно)
+
+#Устанавливаем пакет hello-reaskills
+apt install hello-reaskills
