@@ -1,0 +1,50 @@
+#!/bin/bash
+#Задаем переменные
+
+#Имя программы
+PROGRAMNAME=hello-reaskills
+
+#Версия
+VERSION=1.0-1
+
+#Архитектруа
+ARCH=amd64
+
+#Формируем имя покета (состоит из Имени программы_Версии_Архитектуры) по факту не обязательно
+OUTPUT_FILENAME="${PROGRAMNAME}_${VERSION}_${ARCH}.deb"
+
+# Каталог для для copyright и changelog
+DOCSDIR="debian/usr/share/doc/${PROGRAMNAME}"
+
+# Создаем необходимые каталоги
+mkdir -v -p debian/DEBIAN
+mkdir -v -p debian/usr/bin
+
+# Копируем прогу (должна лежать рядом со скриптом)
+cp -v "${PROGRAMNAME}" debian/usr/bin/
+
+# Создаем каталог для copyright и changelog
+mkdir -p "DOCSDIR"
+
+# Создаем файл copyright (нужно что бы небыло ошибки при проверке lintian)
+touch "${DOCSDIR}/copyright"
+
+# Создаем changelog (нужно что бы небыло ошибки при проверке lintian)
+echo "" | gzip -9 - -c -f > "${DOCSDIR}"/changelog.Debian.gz
+
+# Создаем файл control в debian/DEBIAN/ (В конце указываем расширенный дискрипшен на англ. языке обязательно в 2 строки и в начале обязательно 2 пробела иначе получим ошибку при проверки через lintian)
+echo "Package: ${PROGRAMNAME}
+Version: ${VERSION}
+Priority: optional
+Architecture: ${ARCH}
+Section: misc
+Maintainer: Alexandr Fomin <af@rea2024.ru>
+Description: Коментарий для экспертов
+ sad asdad dsa sda asd a .
+ asd sad ." > debian/DEBIAN/control
+
+# Собираем пакет
+fakeroot dpkg-deb --build debian "${OUTPUT_FILENAME}"
+
+# Проверяем пакет на ошибки если нету error а только warning то все гуд
+lintian "${OUTPUT_FILENAME}"
