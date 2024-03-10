@@ -1,0 +1,27 @@
+<VirtualHost *:443>
+	ServerName logs.rea2024.ru
+	DocumentRoot /var/www/html/logs
+	SSLEngine on
+	SSLCertificateFile      /etc/ssl/certs/logs.pem
+	SSLCertificateKeyFile   /etc/ssl/private/logs.key
+	SSLCertificateChainFile /etc/ssl/certs/ca.pem
+	<Directory "/var/www/html/logs">
+	    AuthType Basic
+	    AuthName "Restricted Content"
+	    AuthUserFile /etc/apache2/.htpasswd
+	    Require valid-user
+	</Directory>
+</VirtualHost>
+
+<VirtualHost *:80>
+	DocumentRoot /var/www/html
+	RedirectMatch 404 "."
+</VirtualHost>
+
+<VirtualHost *:443>
+	DocumentRoot /var/www/html
+	RedirectMatch 404 "."
+	SSLEngine on
+	SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
+</VirtualHost>
